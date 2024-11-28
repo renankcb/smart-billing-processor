@@ -1,0 +1,86 @@
+# Sistema operacional
+.DS_Store
+Thumbs.db
+
+# Ambiente Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+ENV/
+.venv/
+env.bak/
+venv.bak/
+
+# Arquivos de configuração do editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log
+logs/
+debug.log
+
+# Dados temporários e de execução
+*.pid
+*.lock
+/tmp/
+*.bak
+*.old
+
+# Docker
+docker-compose.override.yml
+.dockerignore
+
+# Arquivos do Redis (se aplicável)
+dump.rdb
+*.aof
+
+# PostgreSQL
+pg_data/
+*.sql
+*.sqlite3
+
+# RabbitMQ
+*.rabbitmq
+*.erlang.cookie
+
+# Elasticsearch
+data/
+es_data/
+
+# Build, distribuição e pacotes
+*.egg-info/
+*.egg
+build/
+dist/
+wheels/
+*.whl
+*.manifest
+*.spec
+
+# Arquivos gerados pela execução de testes
+htmlcov/
+.tox/
+.nox/
+.cache/
+coverage.xml
+nosetests.xml
+*.cover
+*.py,cover
+.hypothesis/
+
+# Outros
+.env
+*.env.local
+.env.*.local
+.envrc
+*.pem
+*.key
+*.crt
+secrets.json
