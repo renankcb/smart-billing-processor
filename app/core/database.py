@@ -1,15 +1,29 @@
-from sqlalchemy import create_engine
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
-# URL do banco de dados
-DATABASE_URL = "postgresql+psycopg2://admin:admin@postgres:5432/boletos"
+# URL do banco de dados para uso com AsyncEngine
+DATABASE_URL = "postgresql+asyncpg://admin:admin@postgres:5432/boletos"
 
-# Criar o engine
-engine = create_engine(DATABASE_URL)
+# Cria o engine assíncrono
+async_engine = create_async_engine(DATABASE_URL, echo=True)
 
-# Criar uma fábrica de sessões
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+# Factory para criar sessões assíncronas
+async_session_factory = sessionmaker(
+    bind=async_engine,
+    class_=AsyncSession,
+    expire_on_commit=False,
+)
 
 # Base para os modelos do SQLAlchemy
 Base = declarative_base()
+
+# Função para inicializar tabelas no banco de dados
+async def init_db():
+    """
+    Cria as tabelas no banco de dados com base nos modelos, caso ainda não existam.
+    Isso é útil para ambiente de desenvolvimento e evita sobrescrever tabelas existentes.
+    """
+    async with async_engine.begin() as conn:
+        # Criação de tabelas baseadas nos modelos
+        await conn.run_sync(Base.metadata.create_all)

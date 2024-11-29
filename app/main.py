@@ -1,6 +1,6 @@
 import asyncio
 from fastapi import FastAPI
-from app.core.database import engine
+from app.core.database import init_db
 from app.api.routes_upload import router as routes_upload
 from app.api.routes_healthcheck import router as routes_healthcheck
 from app.models import users, debts
@@ -19,12 +19,12 @@ logger.add(
     format="{time} {level} {message} {extra}",
     serialize=True,
 )
-logger.add(
-    sys.stdout,
-    level="INFO",
-    format="{time} {level} {message} {extra}",
-    serialize=True,
-)
+# logger.add(
+#     sys.stdout,
+#     level="INFO",
+#     format="{time} {level} {message} {extra}",
+#     serialize=True,
+# )
 
 # Instância FastAPI
 app = FastAPI()
@@ -34,10 +34,6 @@ Instrumentator().instrument(app).expose(app)
 # Incluindo rotas
 app.include_router(routes_upload, prefix="/upload", tags=["Upload"])
 app.include_router(routes_healthcheck, prefix="/healthcheck", tags=["Healthcheck"])
-
-# Criar tabelas no banco de dados (apenas para desenvolvimento)
-users.Base.metadata.create_all(bind=engine)
-debts.Base.metadata.create_all(bind=engine)
 
 async def initialize_consumers():
     """
@@ -50,17 +46,24 @@ async def initialize_consumers():
         password="guest",
     )
 
-    # Inicializa o FileProcessingConsumer
+    # Inicializa Consumidores
     file_processing_consumer = FileProcessingConsumer(connection_params)
-    await file_processing_consumer.declare_infrastructure()
+    chunk_processing_consumer = ChunkProcessingConsumer(connection_params)
 
-    # Inicializa o ChunkProcessingConsumer
-    chunk_processing_consumer = ChunkProcessingConsumer(connection_params, prefetch_count=5)
+    # Declarar infraestrutura
+    await file_processing_consumer.declare_infrastructure()
     await chunk_processing_consumer.declare_infrastructure()
 
-    # Criação de tarefas para os consumidores
+    # Iniciar consumidores de forma paralela
     asyncio.create_task(file_processing_consumer.start_consuming())
-    asyncio.create_task(chunk_processing_consumer.start_consuming())
+
+    num_consumers = 2
+    for i in range(num_consumers):
+        consumer = ChunkProcessingConsumer(connection_params)
+        await consumer.declare_infrastructure()
+        asyncio.create_task(consumer.start_consuming(prefetch_count=3))
+
+    
 
 
 @app.on_event("startup")
@@ -69,3 +72,6 @@ async def startup_event():
     Evento executado ao iniciar o aplicativo. Inicializa os consumidores.
     """
     await initialize_consumers()
+
+    # Inicializa BD caso nao tenha sido criado
+    await init_db()
