@@ -36,7 +36,10 @@ class BaseConsumer:
             retry_queue = await channel.declare_queue(
                 self.retry_queue_name,
                 durable=True,
-                arguments={"x-dead-letter-exchange": self.exchange_name, "x-dead-letter-routing-key": self.routing_key},
+                arguments={
+                    "x-dead-letter-exchange": self.exchange_name, 
+                    "x-dead-letter-routing-key": self.routing_key,
+                    "x-message-ttl": 10000},
             )
             await retry_queue.bind(exchange, routing_key=f"{self.routing_key}.retry")
 
