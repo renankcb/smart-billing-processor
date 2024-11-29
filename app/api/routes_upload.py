@@ -3,6 +3,7 @@ from loguru import logger
 from app.services.upload_service import UploadService
 from app.core.rabbitmq_connection_params import RabbitMQConnectionParams
 from app.core.rabbitmq_broker import RabbitMQBroker
+import time
 
 router = APIRouter()
 
@@ -40,6 +41,7 @@ async def upload_csv(
     Returns:
         dict: Mensagem de sucesso ou erro.
     """
+    start_time = time.perf_counter()
     logger.info(
         "File upload request received.",
         extra={"file_name": file.filename, "operation": "upload_csv"},
@@ -71,6 +73,11 @@ async def upload_csv(
                 "status": "success",
             },
         )
+
+        elapsed_time = time.perf_counter() - start_time
+        logger.info(f"### File upload and enqueue completed in {elapsed_time:.2f} seconds.")
+            
+
         return {"message": result}
 
     except ValueError as e:

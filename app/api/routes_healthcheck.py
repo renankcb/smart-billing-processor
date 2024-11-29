@@ -1,10 +1,10 @@
 from fastapi import APIRouter
-from sqlalchemy.orm import Session
-from app.core.database import engine
+from app.core.database import async_engine
 from app.core.rabbitmq_connection_params import RabbitMQConnectionParams
-import aio_pika
+from sqlalchemy.sql import text
 
 router = APIRouter()
+
 
 @router.get("/")
 async def health_check():
@@ -20,11 +20,13 @@ async def health_check():
 
     # Verificar conexão com o banco de dados
     try:
-        with engine.connect() as connection:
-            connection.execute("SELECT 1")
-        health_status["database"] = True
+        async with async_engine.connect() as connection:
+            result = await connection.execute(text("SELECT 1"))  # Use text() para executar a consulta
+            if result.scalar() == 1:
+                health_status["database"] = True
     except Exception as e:
         health_status["database"] = False
+        print(f"Database connection error: {e}")
 
     # Verificar conexão com o RabbitMQ
     try:
@@ -43,7 +45,9 @@ async def health_check():
                 health_status["rabbitmq"] = True
     except Exception as e:
         health_status["rabbitmq"] = False
+        print(f"RabbitMQ connection error: {e}")
 
+    # Retorno do status de saúde
     if all(health_status.values()):
         return {"status": "healthy", "details": health_status}
     else:

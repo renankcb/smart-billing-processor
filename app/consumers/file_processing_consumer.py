@@ -1,10 +1,9 @@
 from loguru import logger
-import json
-import aio_pika
 from app.services.file_processor_service import FileProcessorService
 from app.core.rabbitmq_connection_params import RabbitMQConnectionParams
 from app.consumers.base_consumer import BaseConsumer
 from app.utils.message_publisher import MessagePublisher
+from typing import List
 
 
 class FileProcessingConsumer(BaseConsumer):
@@ -36,24 +35,24 @@ class FileProcessingConsumer(BaseConsumer):
 
         try:
             chunks = self.file_processor_service.process_file(file_path)
-            await self.publish_chunks(file_id, chunks)
+            for chunk in chunks:
+                await self.publish_chunks(file_id, chunk)
         except Exception as e:
             logger.error(f"Error processing file {file_path}: {e}")
             raise
 
-    async def publish_chunks(self, file_id: str, chunks):
+    async def publish_chunks(self, file_id: str, chunk: List[dict]):
         """
         Publica os chunks gerados na fila `chunk_processing_queue`.
 
         Args:
             file_id (str): Identificador do arquivo original.
-            chunks (iterable): Chunks gerados pelo serviço de processamento.
+            chunk (List[dict]): Chunk gerado pelo serviço de processamento.
         """
-        for chunk in chunks:
-            message = {"file_id": file_id, "chunk": chunk}
-            await self.publisher.publish(
-                exchange="chunk_exchange",
-                routing_key="chunk.process",
-                message=message,
-            )
-        logger.info(f"Chunks for file {file_id} enqueued successfully.")
+        message = {"file_id": file_id, "chunk": chunk}
+        await self.publisher.publish(
+            exchange="chunk_exchange",
+            routing_key="chunk.process",
+            message=message,
+        )
+        logger.info(f"Chunk with {len(chunk)} rows enqueued successfully.")

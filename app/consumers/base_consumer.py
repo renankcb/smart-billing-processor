@@ -46,7 +46,7 @@ class BaseConsumer:
 
             logger.info(f"Infrastructure for queue {self.queue_name} declared successfully!")
 
-    async def start_consuming(self):
+    async def start_consuming(self, prefetch_count=1):
         """
         Inicia o consumo da fila.
         """
@@ -55,7 +55,7 @@ class BaseConsumer:
             channel = await connection.channel()
 
             # Configura prefetch
-            await channel.set_qos(prefetch_count=1)
+            await channel.set_qos(prefetch_count=prefetch_count)
 
             queue = await channel.declare_queue(self.queue_name, durable=True)
 
