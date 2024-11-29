@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Numeric, Date, UUID, ForeignKey, TIMESTAMP
+from sqlalchemy import Column, Integer, Index, Numeric, Date, UUID, ForeignKey, TIMESTAMP
 from app.core.database import Base
 from datetime import datetime
 
@@ -7,7 +7,12 @@ class Debt(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    file_id = Column(UUID(as_uuid=True), nullable=False, index=True)  # Para rastreamento
     debt_amount = Column(Numeric(10, 2), nullable=False)
     debt_due_date = Column(Date, nullable=False)
     debt_id = Column(UUID(as_uuid=True), unique=True, nullable=False)
     created_at = Column(TIMESTAMP, default=datetime.utcnow)
+
+    __table_args__ = (
+        Index("idx_user_debt", "user_id", "debt_id"),  # Índice composto para buscas rápidas
+    )
