@@ -7,6 +7,7 @@ from app.models import users, debts
 from app.core.rabbitmq_connection_params import RabbitMQConnectionParams
 from app.consumers.file_processing_consumer import FileProcessingConsumer
 from app.consumers.chunk_processing_consumer import ChunkProcessingConsumer
+from app.consumers.boleto_generation_consumer import BoletoGenerationConsumer
 from loguru import logger
 from prometheus_fastapi_instrumentator import Instrumentator
 import sys
@@ -49,14 +50,16 @@ async def initialize_consumers():
     # Inicializa Consumidores
     file_processing_consumer = FileProcessingConsumer(connection_params)
     chunk_processing_consumer = ChunkProcessingConsumer(connection_params)
+    boleto_generation_consumer = BoletoGenerationConsumer(connection_params)
 
     # Declarar infraestrutura
     await file_processing_consumer.declare_infrastructure()
     await chunk_processing_consumer.declare_infrastructure()
+    await boleto_generation_consumer.declare_infrastructure()
 
     # Iniciar consumidores de forma paralela
     asyncio.create_task(file_processing_consumer.start_consuming())
-
+    asyncio.create_task(boleto_generation_consumer.start_consuming())
     num_consumers = 2
     for i in range(num_consumers):
         consumer = ChunkProcessingConsumer(connection_params)
