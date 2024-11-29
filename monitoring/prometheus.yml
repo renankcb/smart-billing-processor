@@ -3,6 +3,7 @@ global:
 
 scrape_configs:
   - job_name: 'smart-billing-app'
+    metrics_path: '/metrics' 
     static_configs:
       - targets: ['smart-billing-app:8000']
 
@@ -14,6 +15,6 @@ scrape_configs:
     static_configs:
       - targets: ['postgres:5432']
 
-  - job_name: "elasticsearch"
+  - job_name: 'elasticsearch'
     static_configs:
-      - targets: ["elasticsearch:9200"]
+      - targets: ['elasticsearch:9200']
