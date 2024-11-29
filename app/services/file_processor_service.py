@@ -21,12 +21,10 @@ class FileProcessorService:
         try:
             with open(file_path, "r") as file:
                 reader = csv.reader(file)
-                headers = next(reader)  # Lê os cabeçalhos para validação, se necessário
                 chunk = []
                 for i, line in enumerate(reader):
                     chunk.append(line)
                     if (i + 1) % chunk_size == 0:
-                        logger.info(f"Yielding chunk with {chunk_size} rows.")
                         yield chunk
                         chunk = []
                 if chunk:  # Retorna o último chunk

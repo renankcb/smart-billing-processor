@@ -4,6 +4,7 @@ import aio_pika
 from app.services.file_processor_service import FileProcessorService
 from app.core.rabbitmq_connection_params import RabbitMQConnectionParams
 from app.consumers.base_consumer import BaseConsumer
+from app.utils.message_publisher import MessagePublisher
 
 
 class FileProcessingConsumer(BaseConsumer):
@@ -19,6 +20,7 @@ class FileProcessingConsumer(BaseConsumer):
             connection_params=connection_params,
         )
         self.file_processor_service = FileProcessorService()
+        self.publisher = MessagePublisher(connection_params)
 
     async def process_message(self, message: dict):
         """
@@ -47,18 +49,11 @@ class FileProcessingConsumer(BaseConsumer):
             file_id (str): Identificador do arquivo original.
             chunks (iterable): Chunks gerados pelo serviço de processamento.
         """
-        connection = await self.connection_params.get_connection()
-        async with connection:
-            channel = await connection.channel()
-            # await channel.declare_exchange("chunk_exchange", aio_pika.ExchangeType.DIRECT, durable=True)
-
-            for chunk in chunks:
-                message = {"file_id": file_id, "chunk": chunk}
-                await channel.default_exchange.publish(
-                    aio_pika.Message(
-                        body=json.dumps(message).encode(),
-                        delivery_mode=aio_pika.DeliveryMode.PERSISTENT,
-                    ),
-                    routing_key="chunk.process",
-                )
-            logger.info(f"Chunks for file {file_id} enqueued successfully.")
+        for chunk in chunks:
+            message = {"file_id": file_id, "chunk": chunk}
+            await self.publisher.publish(
+                exchange="chunk_exchange",
+                routing_key="chunk.process",
+                message=message,
+            )
+        logger.info(f"Chunks for file {file_id} enqueued successfully.")

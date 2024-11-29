@@ -59,8 +59,8 @@ async def initialize_consumers():
     await chunk_processing_consumer.declare_infrastructure()
 
     # Criação de tarefas para os consumidores
-    # asyncio.create_task(file_processing_consumer.start_consuming())
-    # asyncio.create_task(chunk_processing_consumer.start_consuming())
+    asyncio.create_task(file_processing_consumer.start_consuming())
+    asyncio.create_task(chunk_processing_consumer.start_consuming())
 
 
 @app.on_event("startup")

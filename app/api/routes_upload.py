@@ -13,7 +13,7 @@ def get_upload_service() -> UploadService:
     """
     # Configura os parâmetros de conexão do RabbitMQ
     connection_params = RabbitMQConnectionParams(
-        host="rabbitmq",  # Substitua pelo host do RabbitMQ
+        host="rabbitmq", 
         port=5672,
         username="guest",
         password="guest",
