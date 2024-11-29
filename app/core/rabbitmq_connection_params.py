@@ -1,9 +1,8 @@
-import pika
-
+import aio_pika
 
 class RabbitMQConnectionParams:
     """
-    Classe responsável por gerenciar os parâmetros de conexão com o RabbitMQ.
+    Classe responsável por gerenciar os parâmetros de conexão com o RabbitMQ para uso com aio_pika.
     """
 
     def __init__(self, host: str = "rabbitmq", port: int = 5672, username: str = "guest", password: str = "guest"):
@@ -12,18 +11,13 @@ class RabbitMQConnectionParams:
         self.username = username
         self.password = password
 
-    def get_connection(self) -> pika.ConnectionParameters:
+    async def get_connection(self) -> aio_pika.RobustConnection:
         """
-        Retorna os parâmetros de conexão configurados.
+        Retorna uma conexão assíncrona configurada com RabbitMQ.
 
         Returns:
-            pika.ConnectionParameters: Parâmetros configurados para conexão.
+            aio_pika.RobustConnection: Conexão configurada.
         """
-        credentials = pika.PlainCredentials(self.username, self.password)
-        return pika.ConnectionParameters(
-            host=self.host,
-            port=self.port,
-            credentials=credentials,
-            heartbeat=60,
-            blocked_connection_timeout=30,
+        return await aio_pika.connect_robust(
+            f"amqp://{self.username}:{self.password}@{self.host}:{self.port}/"
         )

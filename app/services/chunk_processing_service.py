@@ -1,6 +1,4 @@
-import logging
-
-logging.basicConfig(level=logging.INFO)
+from loguru import logger
 
 
 class ChunkProcessingService:
@@ -18,8 +16,8 @@ class ChunkProcessingService:
         """
         try:
             # Simula o armazenamento na base
-            logging.info(f"Storing chunk for file {file_id} with {len(chunk)} rows.")
+            logger.info(f"Storing chunk for file {file_id} with {len(chunk)} rows.")
             # Adicione a lógica de armazenamento aqui
         except Exception as e:
-            logging.error(f"Error processing chunk for file {file_id}: {e}")
+            logger.error(f"Error processing chunk for file {file_id}: {e}")
             raise

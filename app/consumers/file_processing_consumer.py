@@ -1,11 +1,9 @@
-import pika
+from loguru import logger
 import json
-import logging
+import aio_pika
 from app.services.file_processor_service import FileProcessorService
 from app.core.rabbitmq_connection_params import RabbitMQConnectionParams
 from app.consumers.base_consumer import BaseConsumer
-
-logging.basicConfig(level=logging.INFO)
 
 
 class FileProcessingConsumer(BaseConsumer):
@@ -22,7 +20,7 @@ class FileProcessingConsumer(BaseConsumer):
         )
         self.file_processor_service = FileProcessorService()
 
-    def process_message(self, message: dict):
+    async def process_message(self, message: dict):
         """
         Processa a mensagem para dividir o arquivo em chunks.
 
@@ -32,17 +30,16 @@ class FileProcessingConsumer(BaseConsumer):
         file_id = message.get("file_id")
         file_path = message.get("file_path")
 
-        logging.info(f"### Processing file {file_path} with ID {file_id}")
+        logger.info(f"Processing file {file_path} with ID {file_id}")
 
         try:
             chunks = self.file_processor_service.process_file(file_path)
-            self.publish_chunks(file_id, chunks)
-
+            await self.publish_chunks(file_id, chunks)
         except Exception as e:
-            logging.error(f"Error processing file {file_path}: {e}")
+            logger.error(f"Error processing file {file_path}: {e}")
             raise
 
-    def publish_chunks(self, file_id: str, chunks):
+    async def publish_chunks(self, file_id: str, chunks):
         """
         Publica os chunks gerados na fila `chunk_processing_queue`.
 
@@ -50,20 +47,18 @@ class FileProcessingConsumer(BaseConsumer):
             file_id (str): Identificador do arquivo original.
             chunks (iterable): Chunks gerados pelo serviço de processamento.
         """
-        connection = pika.BlockingConnection(self.connection_params.get_connection())
-        channel = connection.channel()
+        connection = await self.connection_params.get_connection()
+        async with connection:
+            channel = await connection.channel()
+            # await channel.declare_exchange("chunk_exchange", aio_pika.ExchangeType.DIRECT, durable=True)
 
-        # Declaração da fila para garantir existência
-        # channel.exchange_declare(exchange="chunk_exchange", exchange_type="direct", durable=True)
-        # channel.queue_declare(queue="chunk_processing_queue", durable=True)
-
-        for chunk in chunks:
-            message = {"file_id": file_id, "chunk": chunk}
-            channel.basic_publish(
-                exchange="chunk_exchange",
-                routing_key="chunk.process",
-                body=json.dumps(message),
-                properties=pika.BasicProperties(delivery_mode=2),  # Persistência
-            )
-        connection.close()
-        logging.info(f"Chunks for file {file_id} enqueued successfully.")
+            for chunk in chunks:
+                message = {"file_id": file_id, "chunk": chunk}
+                await channel.default_exchange.publish(
+                    aio_pika.Message(
+                        body=json.dumps(message).encode(),
+                        delivery_mode=aio_pika.DeliveryMode.PERSISTENT,
+                    ),
+                    routing_key="chunk.process",
+                )
+            logger.info(f"Chunks for file {file_id} enqueued successfully.")

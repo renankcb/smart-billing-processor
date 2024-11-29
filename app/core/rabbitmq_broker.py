@@ -1,37 +1,37 @@
-import pika
+import aio_pika
 import json
 from app.core.rabbitmq_connection_params import RabbitMQConnectionParams
-from app.core.message_broker import MessageBroker
 
 
-class RabbitMQBroker(MessageBroker):
+class RabbitMQBroker:
     """
-    Implementação da interface MessageBroker para RabbitMQ.
+    Implementação do broker para RabbitMQ com aio_pika.
     """
 
     def __init__(self, connection_params: RabbitMQConnectionParams):
         self.connection_params = connection_params
 
-    def publish_to_queue(self, exchange: str, routing_key: str, message: dict):
+    async def publish_to_queue(self, exchange: str, routing_key: str, message: dict):
         """
         Publica uma mensagem em uma fila do RabbitMQ.
 
         Args:
             exchange (str): Nome da exchange.
             routing_key (str): Chave de roteamento para a fila.
-            message (Dict): Mensagem a ser publicada.
+            message (dict): Mensagem a ser publicada.
         """
-        connection = pika.BlockingConnection(self.connection_params.get_connection())
-        channel = connection.channel()
+        connection = await self.connection_params.get_connection()
+        async with connection:
+            channel = await connection.channel()
 
-        # Declaração da exchange para garantir que ela exista
-        # channel.exchange_declare(exchange=exchange, exchange_type="direct", durable=True)
+            # Declaração da exchange para garantir que ela exista
+            # await channel.declare_exchange(exchange, aio_pika.ExchangeType.DIRECT, durable=True)
 
-        # Publicação da mensagem
-        channel.basic_publish(
-            exchange=exchange,
-            routing_key=routing_key,
-            body=json.dumps(message),
-            properties=pika.BasicProperties(delivery_mode=2),  # Tornar a mensagem persistente
-        )
-        connection.close()
+            # Publicação da mensagem
+            await channel.default_exchange.publish(
+                aio_pika.Message(
+                    body=json.dumps(message).encode(),
+                    delivery_mode=aio_pika.DeliveryMode.PERSISTENT,  # Tornar a mensagem persistente
+                ),
+                routing_key=routing_key,
+            )

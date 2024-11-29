@@ -45,7 +45,7 @@ class UploadService:
             )
             raise ValueError(f"Error saving file: {str(e)}")
 
-    def enqueue_file(self, file_id: str, file_path: str, file_name: str):
+    async def enqueue_file(self, file_id: str, file_path: str, file_name: str):
         """
         Enfileira uma mensagem para processamento do arquivo.
 
@@ -60,7 +60,7 @@ class UploadService:
             "file_path": file_path,
         }
         try:
-            self.message_broker.publish_to_queue(
+            await self.message_broker.publish_to_queue(
                 exchange="file_exchange",
                 routing_key="file.process",
                 message=message,
@@ -88,5 +88,5 @@ class UploadService:
         """
         file_id = str(uuid.uuid4())  # Gera um identificador único para o arquivo
         file_path = await self.save_file(file)
-        self.enqueue_file(file_id, file_path, file.filename)
+        await self.enqueue_file(file_id, file_path, file.filename)
         return f"File {file.filename} uploaded and enqueued successfully with ID {file_id}."

@@ -1,7 +1,5 @@
 import csv
-import logging
-
-logging.basicConfig(level=logging.INFO)
+from loguru import logger
 
 
 class FileProcessorService:
@@ -28,12 +26,12 @@ class FileProcessorService:
                 for i, line in enumerate(reader):
                     chunk.append(line)
                     if (i + 1) % chunk_size == 0:
-                        logging.info(f"Yielding chunk with {chunk_size} rows.")
+                        logger.info(f"Yielding chunk with {chunk_size} rows.")
                         yield chunk
                         chunk = []
                 if chunk:  # Retorna o último chunk
-                    logging.info(f"Yielding final chunk with {len(chunk)} rows.")
+                    logger.info(f"Yielding final chunk with {len(chunk)} rows.")
                     yield chunk
         except Exception as e:
-            logging.error(f"Error processing file {file_path}: {e}")
+            logger.error(f"Error processing file {file_path}: {e}")
             raise ValueError(f"Error processing file {file_path}: {e}")
