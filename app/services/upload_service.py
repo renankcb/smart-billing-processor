@@ -22,6 +22,23 @@ class UploadService:
         if not os.path.exists(self.temp_dir):
             os.makedirs(self.temp_dir)
 
+    def validate_file_format(self, file: UploadFile):
+        """
+        Valida o formato do arquivo.
+
+        Args:
+            file (UploadFile): Arquivo enviado pelo cliente.
+
+        Raises:
+            ValueError: Se o formato do arquivo não for permitido.
+        """
+        if not file.filename.endswith(".csv"):
+            logger.warning(
+                "Invalid file format.",
+                extra={"file_name": file.filename, "reason": "Invalid format"},
+            )
+            raise ValueError("Only CSV files are allowed.")
+
     async def save_file(self, file: UploadFile) -> str:
         """
         Salva o arquivo em um diretório temporário.
@@ -75,7 +92,7 @@ class UploadService:
 
     async def save_and_enqueue_file(self, file: UploadFile) -> str:
         """
-        Salva o arquivo temporariamente e enfileira uma mensagem para processamento.
+        Valida, salva o arquivo temporariamente e enfileira uma mensagem para processamento.
 
         Args:
             file (UploadFile): Arquivo enviado pelo cliente.
@@ -86,6 +103,9 @@ class UploadService:
         Raises:
             ValueError: Se houver erro no processo.
         """
+        # Valida formato
+        self.validate_file_format(file)
+
         file_id = str(uuid.uuid4())  # Gera um identificador único para o arquivo
         file_path = await self.save_file(file)
         await self.enqueue_file(file_id, file_path, file.filename)

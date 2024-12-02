@@ -7,7 +7,6 @@ import time
 
 router = APIRouter()
 
-# Dependência para injetar o serviço
 def get_upload_service() -> UploadService:
     """
     Configura a instância do UploadService com o RabbitMQBroker.
@@ -19,11 +18,7 @@ def get_upload_service() -> UploadService:
         username="guest",
         password="guest",
     )
-
-    # Cria o RabbitMQBroker
     rabbitmq_broker = RabbitMQBroker(connection_params)
-
-    # Retorna o UploadService configurado
     return UploadService(message_broker=rabbitmq_broker)
 
 
@@ -41,26 +36,10 @@ async def upload_csv(
     Returns:
         dict: Mensagem de sucesso ou erro.
     """
-    start_time = time.perf_counter()
     logger.info(
         "File upload request received.",
         extra={"file_name": file.filename, "operation": "upload_csv"},
     )
-
-    # Validação do formato do arquivo
-    if not file.filename.endswith(".csv"):
-        logger.warning(
-            "File upload rejected. Invalid format.",
-            extra={
-                "file_name": file.filename,
-                "operation": "upload_csv",
-                "reason": "Invalid format",
-            },
-        )
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Only CSV files are allowed.",
-        )
 
     try:
         # Salva e enfileira o arquivo usando o serviço
@@ -73,10 +52,6 @@ async def upload_csv(
                 "status": "success",
             },
         )
-
-        elapsed_time = time.perf_counter() - start_time
-        logger.info(f"### File upload and enqueue completed in {elapsed_time:.2f} seconds.")
-            
 
         return {"message": result}
 
