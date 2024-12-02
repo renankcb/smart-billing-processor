@@ -8,6 +8,11 @@ Sistema assíncrono de processamento de arquivos CSV para geração automatizada
 ### Visão Geral
 O sistema utiliza uma arquitetura orientada a eventos, com processamento assíncrono distribuído através do RabbitMQ. A arquitetura foi projetada para ser escalável e resiliente, permitindo o processamento de grandes volumes de dados de forma eficiente.
 
+![Arquitetura Macro do Sistema](./docs/images/arquitetura-macro.png)
+
+![Estrategia de Retentativa](./docs/images/estrategia-de-retentativa.png)
+
+
 ### Componentes Principais
 - **API Upload**: Endpoint para recebimento de arquivos CSV
 - **File Processor**: Responsável por dividir arquivos em chunks
