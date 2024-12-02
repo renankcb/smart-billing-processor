@@ -17,7 +17,8 @@ class BoletoService:
             user_id (str): Identificador do usuário.
             debt_id (str): Identificador da dívida.
         """
+
+        # Implementar aqui geraçao de boleto, armazenamento na tabela de boletos e envio para fila de notificaçao
         async with self.session_factory() as session:
             async with session.begin():
-                logger.info(f"Boleto generated for User ID: {user_id}, Debt ID: {debt_id}")
-                # Implementação futura pode incluir lógica de geração específica.
+                logger.info(f"Boleto gerado para usuario: {user_id}, Debt ID: {debt_id}")
